@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dynamic Q&A Form with Vue</title>
+ 
+</head>
+<body>
+  <div id="app">
+    <dynamic-form></dynamic-form>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <script>
+    Vue.component('dynamic-form', {
+      data() {
+        return {
+          formFields: [],
+          newFieldType: 'text',
+          fieldTypes: ['text', 'radio', 'select', 'autocomplete'],
+          isViewingAnswers: false,
+          submittedAnswers: []
+        };
+      },
+      methods: {
+        addField() {
+          this.formFields.push({
+            type: this.newFieldType,
+            question: '',
+            answer: '',
+            options: []
+          });
+        },
+        removeField(index) {
+          this.formFields.splice(index, 1);
+        },
+        addOption(field) {
+          field.options.push('');
+        },
+        removeOption(field, optionIndex) {
+          field.options.splice(optionIndex, 1);
+        },
+        toggleViewingAnswers() {
+          this.isViewingAnswers = !this.isViewingAnswers;
+        },
+        handleAutocompleteSelect(field, selectedOption) {
+          field.answer = selectedOption;
+        },
+        submitAnswers() {
+          this.submittedAnswers = this.formFields.map(field => {
+            return {
+              question: field.question,
+              answer: field.answer
+            };
+          });
+        }
+      },
+      template: `
+        <div>
+          <button @click="toggleViewingAnswers" class="add-button">
+            {{ isViewingAnswers ? 'Edit Questions' : 'View Answers' }}
+          </button>
+          <div v-for="(field, index) in formFields" :key="index" class="field-row">
+            <label class="field-label">Question:</label>
+            <input type="text" v-model="field.question" :readonly="isViewingAnswers" class="field-input" />
+            
+            <label class="field-label">Type:</label>
+            <select v-model="field.type" :disabled="isViewingAnswers" class="field-input">
+              <option v-for="type in fieldTypes" :key="type" :value="type">{{ type }}</option>
+            </select>
+            
+            <label v-if="field.type !== 'text'" class="field-label">Options:</label>
+            <div class="options" v-if="['radio', 'select'].includes(field.type)">
+              <div class="option-row" v-for="(option, optionIndex) in field.options" :key="optionIndex">
+                <input v-model="field.options[optionIndex]" :readonly="isViewingAnswers" class="option-input" />
+                <button @click="removeOption(field, optionIndex)" class="remove-option-button" :disabled="isViewingAnswers">Remove</button>
+              </div>
+              <button @click="addOption(field)" class="add-button" :disabled="isViewingAnswers">Add Option</button>
+            </div>
+            
+            <div v-if="field.type === 'autocomplete'" class="options">
+              <input type="text" v-model="field.answer" :readonly="isViewingAnswers" class="option-input" />
+              <ul v-if="!isViewingAnswers">
+                <li v-for="(option, optionIndex) in field.options" :key="optionIndex" @click="handleAutocompleteSelect(field, option)" class="option-row">{{ option }}</li>
+              </ul>
+            </div>
+            
+            <button @click="removeField(index)" v-if="!isViewingAnswers" class="remove-option-button">Remove</button>
+          </div>
+          <button @click="addField" v-if="!isViewingAnswers" class="add-button">Add Field</button>
+          <button @click="submitAnswers" v-if="isViewingAnswers" class="submit-button">Submit Answers</button>
+          <div v-if="submittedAnswers.length > 0" class="submitted-answers">
+            <h2>Submitted Answers:</h2>
+            <ul>
+              <li v-for="(answer, index) in submittedAnswers" :key="index">{{ answer.question }}: {{ answer.answer }}</li>
+            </ul>
+          </div>
+        </div>
+      `
+    });
+
+    new Vue({
+      el: '#app'
+    });
+  </script>
+</body>
+</html>
